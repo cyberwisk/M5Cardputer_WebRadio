@@ -47,7 +47,7 @@ static constexpr const char* station_list[][2] =
   {"Lite Favorites"    , "http://naxos.cdnstream.com:80/1255_128"},
   {"Classic FM"        , "http://media-ice.musicradio.com:80/ClassicFMMP3"},
   //{"Morcegao FM"       , "http://tunein.com/radio/Morcego-FM-s112812/"},  
-  {"Morcegao FM"       , "http://radio.morcegaofm.com.br/morcegao32/"},
+  //{"Morcegao FM"       , "http://radio.morcegaofm.com.br/morcegao32/"},
 };
 static constexpr const size_t stations = sizeof(station_list) / sizeof(station_list[0]);
 
@@ -668,12 +668,14 @@ void loop(void)
         }
         if (M5Cardputer.Keyboard.isKeyPressed(';')) {
            if (v <= 255){
-            M5Cardputer.Speaker.setVolume(v++);
+            v+= 10;
+            M5Cardputer.Speaker.setVolume(v);
             }
         }
         if (M5Cardputer.Keyboard.isKeyPressed('.')) {
            if (v >= 0){
-            M5Cardputer.Speaker.setVolume(v--);
+            v-= 10;
+            M5Cardputer.Speaker.setVolume(v);
             }
         }
     }
