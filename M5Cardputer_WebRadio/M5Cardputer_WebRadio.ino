@@ -2,7 +2,6 @@
  * @file M5Cardputer_WebRadio.ino
  * @author Aurélio Avanzi
  * @brief M5Cardputer WebRadio
- * @https://github.com/cyberwisk/M5Cardputer_WebRadio
  * @version 0.1
  * @date 2023-12-12
  *
@@ -14,8 +13,8 @@
  * ESP8266Audio: https://github.com/earlephilhower/ESP8266Audio/ 
  */
 
-#define WIFI_SSID "Frajola"
-#define WIFI_PASS "Senha"
+#define WIFI_SSID "SET YOUR WIFI SSID"
+#define WIFI_PASS "SET YOUR WIFI PASS"
 
 #include <M5Cardputer.h>
 #include <M5Unified.h>
@@ -655,10 +654,27 @@ void loop(void)
   }
 
   M5Cardputer.update();
-  // ---------------------------------------------- //
+    size_t v = M5Cardputer.Speaker.getVolume();
+  // M5Cardputer Keyboard.-------------------------- //
     if (M5Cardputer.Keyboard.isChange()) {
+        M5Cardputer.Speaker.tone(330, 50);
+        if (M5Cardputer.Keyboard.isKeyPressed('/')) {
+          if (++station_index >= stations) { station_index = 0; }
+            play(station_index);
+        }
+        if (M5Cardputer.Keyboard.isKeyPressed(',')) {
+          if (--station_index >= stations) { station_index = 0; }
+            play(station_index);
+        }
+        if (M5Cardputer.Keyboard.isKeyPressed(';')) {
+           if (v <= 255){
+            M5Cardputer.Speaker.setVolume(v++);
+            }
+        }
         if (M5Cardputer.Keyboard.isKeyPressed('.')) {
-
+           if (v >= 0){
+            M5Cardputer.Speaker.setVolume(v--);
+            }
         }
     }
   // ---------------------------------------------- //
@@ -685,7 +701,6 @@ void loop(void)
   }
   if (M5Cardputer.BtnA.isHolding() || M5.BtnB.isPressed() || M5.BtnC.isPressed())
   {
-    size_t v = M5Cardputer.Speaker.getVolume();
     int add = (M5.BtnB.isPressed()) ? -1 : 1;
     if (M5.BtnA.isHolding())
     {
