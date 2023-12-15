@@ -201,8 +201,8 @@ public:
   }
 };
 
-static constexpr const int preallocateBufferSize = 6 * 2024;
-static constexpr const int preallocateCodecSize = 29192; // MP3 codec max mem needed
+static constexpr const int preallocateBufferSize = 32 * 512;
+static constexpr const int preallocateCodecSize = 85332; // MP3 codec max mem needed
 static void* preallocateBuffer = nullptr;
 static void* preallocateCodec = nullptr;
 static constexpr size_t WAVE_SIZE = 320;
@@ -632,6 +632,12 @@ void setup(void)
     M5Cardputer.Display.print(".");
     delay(100);
   }
+  M5Cardputer.Display.println("");
+  M5Cardputer.Display.println("WiFi conectada.");
+  M5Cardputer.Display.println(ssid);
+  M5Cardputer.Display.println("Endereço de IP: ");
+  M5Cardputer.Display.println(WiFi.localIP());
+    delay(1000);
   M5Cardputer.Display.clear();
   gfxSetup(&M5Cardputer.Display);
   play(station_index);
@@ -657,7 +663,7 @@ void loop(void)
     size_t v = M5Cardputer.Speaker.getVolume();
   // M5Cardputer Keyboard.-------------------------- //
     if (M5Cardputer.Keyboard.isChange()) {
-        M5Cardputer.Speaker.tone(330, 50);
+        M5Cardputer.Speaker.tone(550, 50);
         if (M5Cardputer.Keyboard.isKeyPressed('/')) {
           if (++station_index >= stations) { station_index = 0; }
             play(station_index);
