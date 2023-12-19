@@ -632,12 +632,20 @@ void setup(void)
     M5Cardputer.Display.print(".");
     delay(100);
   }
+  if (WiFi.status() == WL_CONNECTED) {
   M5Cardputer.Display.println("");
   M5Cardputer.Display.println("WiFi conectada.");
-  M5Cardputer.Display.println(ssid);
+  M5Cardputer.Display.println(WIFI_SSID);
   M5Cardputer.Display.println("Endereço de IP: ");
   M5Cardputer.Display.println(WiFi.localIP());
-    delay(1000);
+  M5Cardputer.Speaker.tone(1000, 100);
+  delay(2000);
+  } else { //todo
+  M5Cardputer.Display.println("");
+  M5Cardputer.Display.println("WIFI_SSID ?.");
+  M5Cardputer.Display.println("WIFI_PASS ?.");
+  M5Cardputer.Display.println("");
+  }
   M5Cardputer.Display.clear();
   gfxSetup(&M5Cardputer.Display);
   play(station_index);
@@ -665,10 +673,14 @@ void loop(void)
     if (M5Cardputer.Keyboard.isChange()) {
         M5Cardputer.Speaker.tone(550, 50);
         if (M5Cardputer.Keyboard.isKeyPressed('/')) {
+          delay(200);
+          M5Cardputer.Speaker.tone(1000, 100);
           if (++station_index >= stations) { station_index = 0; }
             play(station_index);
         }
         if (M5Cardputer.Keyboard.isKeyPressed(',')) {
+          delay(200);
+          M5Cardputer.Speaker.tone(800, 100);     
           if (--station_index >= stations) { station_index = 0; }
             play(station_index);
         }
@@ -684,6 +696,7 @@ void loop(void)
             M5Cardputer.Speaker.setVolume(v);
             }
         }
+
     }
   // ---------------------------------------------- //
   if (M5Cardputer.BtnA.wasPressed())
