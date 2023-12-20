@@ -640,7 +640,7 @@ void setup(void)
   M5Cardputer.Display.println(WiFi.localIP());
   M5Cardputer.Speaker.tone(1000, 100);
   delay(2000);
-  } else { //todo
+  } else { //todo configurar wifi pelo teclado 
   M5Cardputer.Display.println("");
   M5Cardputer.Display.println("WIFI_SSID ?.");
   M5Cardputer.Display.println("WIFI_PASS ?.");
@@ -669,8 +669,7 @@ void loop(void)
 
   M5Cardputer.update();
     size_t v = M5Cardputer.Speaker.getVolume();
-  // M5Cardputer Keyboard.-------------------------- //
-    if (M5Cardputer.Keyboard.isChange()) {
+      if (M5Cardputer.Keyboard.isChange()) {
         M5Cardputer.Speaker.tone(550, 50);
         if (M5Cardputer.Keyboard.isKeyPressed('/')) {
           delay(200);
@@ -698,7 +697,7 @@ void loop(void)
         }
 
     }
-  // ---------------------------------------------- //
+  
   if (M5Cardputer.BtnA.wasPressed())
   {
     M5Cardputer.Speaker.tone(440, 50);
