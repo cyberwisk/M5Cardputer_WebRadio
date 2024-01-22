@@ -25,6 +25,7 @@
 #include <AudioFileSource.h>
 #include <AudioFileSourceBuffer.h>
 #include <AudioGeneratorMP3.h>
+#include <AudioGeneratorAAC.h>
 #include <AudioOutputI2S.h>
 
 /// set M5Speaker virtual channel (0-7)
@@ -34,7 +35,6 @@ static constexpr uint8_t m5spk_virtual_channel = 0;
 static constexpr const char* station_list[][2] =
 {
   {"MundoLivre FM"     , "http://rrdns-continental.webnow.com.br/mundolivre.mp3"},
-  {"thejazzstream"     , "http://wbgo.streamguys.net/thejazzstream"},
   {"u80s"              , "http://ice6.somafm.com/u80s-128-mp3"},
   {"Awesome80s"        , "http://listen.livestreamingservice.com/181-awesome80s_128k.mp3"},
   {"Metal Detector"    , "http://ice4.somafm.com/metal-128-mp3"},
@@ -46,8 +46,9 @@ static constexpr const char* station_list[][2] =
   {"dronezone-128-mp3" , "http://ice1.somafm.com/dronezone-128-mp3"},
   {"Lite Favorites"    , "http://naxos.cdnstream.com:80/1255_128"},
   {"Classic FM"        , "http://media-ice.musicradio.com:80/ClassicFMMP3"},
-  //{"Morcegao FM"       , "http://tunein.com/radio/Morcego-FM-s112812/"},  
-  //{"Morcegao FM"       , "http://radio.morcegaofm.com.br/morcegao32/"},
+  {"Bons Tempos FM"    , "https://server02.ouvir.radio.br:8050/stream"},
+  //{"MundoLivre FM"     , "https://rrdns-continental.webnow.com.br:80/mundolivre.aac"},
+  //{"Morcegao FM"       , "https://radio.morcegaofm.com.br/auto"},
 };
 static constexpr const size_t stations = sizeof(station_list) / sizeof(station_list[0]);
 
@@ -202,7 +203,7 @@ public:
 };
 
 static constexpr const int preallocateBufferSize = 32 * 512;
-static constexpr const int preallocateCodecSize = 85332; // MP3 codec max mem needed
+static constexpr const int preallocateCodecSize = 85332; // MP3 and AAC+SBR codec max mem needed
 static void* preallocateBuffer = nullptr;
 static void* preallocateCodec = nullptr;
 static constexpr size_t WAVE_SIZE = 320;
@@ -278,6 +279,7 @@ static void decodeTask(void*)
       file = new AudioFileSourceICYStream(station_list[index][1]);
       file->RegisterMetadataCB(MDCallback, (void*)"ICY");
       buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
+      //decoder = isAAC ? (AudioGenerator*) new AudioGeneratorAAC(preallocateCodec, preallocateCodecSize) : (AudioGenerator*) new AudioGeneratorMP3(preallocateCodec, preallocateCodecSize);
       decoder = new AudioGeneratorMP3(preallocateCodec, preallocateCodecSize);
       decoder->begin(buff, &out);
     }
@@ -616,6 +618,7 @@ void setup(void)
 
   M5Cardputer.Speaker.begin();
   M5Cardputer.Lcd.setRotation(1);
+  M5Cardputer.Lcd.setTextSize(2);
   M5Cardputer.Display.println("Connecting to WiFi");
   WiFi.disconnect();
   WiFi.softAPdisconnect(true);
@@ -650,6 +653,7 @@ void setup(void)
   gfxSetup(&M5Cardputer.Display);
   play(station_index);
   xTaskCreatePinnedToCore(decodeTask, "decodeTask", 4096, nullptr, 1, nullptr, PRO_CPU_NUM);
+  M5Cardputer.Lcd.setTextSize(1);
 }
 
 void loop(void)
@@ -695,7 +699,12 @@ void loop(void)
             M5Cardputer.Speaker.setVolume(v);
             }
         }
-
+        if (M5Cardputer.Keyboard.isKeyPressed('m')) {
+           if (v >= 0){
+            v= 0;
+            M5Cardputer.Speaker.setVolume(v);
+            }
+        }
     }
   
   if (M5Cardputer.BtnA.wasPressed())
