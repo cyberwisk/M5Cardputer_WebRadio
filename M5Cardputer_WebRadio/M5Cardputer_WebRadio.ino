@@ -13,8 +13,8 @@
  * ESP8266Audio: https://github.com/earlephilhower/ESP8266Audio/ 
  */
 
-#define WIFI_SSID "SET YOUR WIFI SSID"
-#define WIFI_PASS "SET YOUR WIFI PASS"
+//#define WIFI_SSID ""
+//#define WIFI_PASS ""
 
 #include <M5Cardputer.h>
 #include <M5Unified.h>
@@ -25,7 +25,7 @@
 #include <AudioFileSource.h>
 #include <AudioFileSourceBuffer.h>
 #include <AudioGeneratorMP3.h>
-#include <AudioGeneratorAAC.h>
+//#include <AudioGeneratorAAC.h>
 #include <AudioOutputI2S.h>
 
 /// set M5Speaker virtual channel (0-7)
@@ -511,7 +511,6 @@ void gfxLoop(LGFX_Device* gfx)
           gfx->writeFastHLine(x, py, bw - 1, TFT_WHITE);
         }
 
-
         if (wave_enabled)
         {
           for (size_t bi = 0; bi < bw; ++bi)
@@ -610,7 +609,7 @@ void setup(void)
   { /// custom setting
     auto spk_cfg = M5Cardputer.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
-    spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
+    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
     spk_cfg.task_pinned_core = APP_CPU_NUM;
     M5Cardputer.Speaker.config(spk_cfg);
   }
@@ -618,7 +617,7 @@ void setup(void)
 
   M5Cardputer.Speaker.begin();
   M5Cardputer.Lcd.setRotation(1);
-  M5Cardputer.Lcd.setTextSize(2);
+  M5Cardputer.Lcd.setTextSize(1.3);
   M5Cardputer.Display.println("Connecting to WiFi");
   WiFi.disconnect();
   WiFi.softAPdisconnect(true);
@@ -631,23 +630,45 @@ void setup(void)
 #endif
 
   // Try forever
-  while (WiFi.status() != WL_CONNECTED) {
-    M5Cardputer.Display.print(".");
-    delay(100);
-  }
+ // while (WiFi.status() != WL_CONNECTED) {
+ //   M5Cardputer.Display.print(".");
+ //   delay(100);
+ // }
   if (WiFi.status() == WL_CONNECTED) {
   M5Cardputer.Display.println("");
   M5Cardputer.Display.println("WiFi conectada.");
-  M5Cardputer.Display.println(WIFI_SSID);
+  M5Cardputer.Display.println(WiFi.SSID());
   M5Cardputer.Display.println("Endereço de IP: ");
   M5Cardputer.Display.println(WiFi.localIP());
   M5Cardputer.Speaker.tone(1000, 100);
   delay(2000);
-  } else { //todo configurar wifi pelo teclado 
-  M5Cardputer.Display.println("");
-  M5Cardputer.Display.println("WIFI_SSID ?.");
-  M5Cardputer.Display.println("WIFI_PASS ?.");
-  M5Cardputer.Display.println("");
+  } else { //"todo" função para configurar wifi pelo teclado 
+   //Fill in WIFI configuration information through mobile APP to connect
+   //https://www.espressif.com/en/products/software/esp-touch/resources
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.beginSmartConfig();
+    M5Cardputer.Display.println("Baixe o ESP-TOUCH APP");
+    M5Cardputer.Display.println("Waiting for Phone SmartConfig.");  // Screen print format string.
+    while (!WiFi.smartConfigDone()) {  // If the smart network is not completed.
+        delay(500);
+        M5Cardputer.Display.print(".");
+    }
+    M5Cardputer.Display.println("\nSmartConfig received.");
+
+    M5Cardputer.Display.println("Waiting for WiFi");
+    while (
+        WiFi.status() !=
+        WL_CONNECTED) { 
+        delay(300);
+        M5Cardputer.Display.print(".");
+    }
+    M5Cardputer.Display.clear();
+    M5Cardputer.Display.print("\nWiFi Connect To: ");
+    M5Cardputer.Display.println(WiFi.SSID());
+    M5Cardputer.Display.print("IP address: ");
+    M5Cardputer.Display.println(WiFi.localIP());
+    M5Cardputer.Display.print("RSSI: ");
+    M5Cardputer.Display.println(WiFi.RSSI());
   }
   M5Cardputer.Display.clear();
   gfxSetup(&M5Cardputer.Display);
