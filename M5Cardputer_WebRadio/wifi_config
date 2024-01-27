@@ -1,43 +1,55 @@
 #include "M5Cardputer.h"
+#include <WiFi.h>
 
-String data = "> ";
+const int MAX_NETWORKS = 10; // Maximum number of networks to display
+int selectedNetwork = 0;     // Index of the selected network
+int startIdx = 0;            // Start index for displaying networks
+
+void displayNetworks() {
+  M5Cardputer.Display.fillScreen(TFT_BLACK);
+  M5Cardputer.Display.setTextColor(TFT_WHITE);
+  M5Cardputer.Display.setTextSize(1.3);
+
+  int numNetworks = WiFi.scanNetworks();
+   if (numNetworks == 0) {
+     M5Cardputer.Display.println("No WiFi networks found.");
+   } else {
+     M5Cardputer.Display.println("Available WiFi Networks:");
+     M5Cardputer.Display.clear();
+     for (int i = startIdx; i < min(startIdx + MAX_NETWORKS, numNetworks); ++i) {
+       int yPos = (i - startIdx) * 15; // Adjust the vertical spacing as needed
+       M5Cardputer.Display.setCursor(10, yPos);
+       M5Cardputer.Display.printf("%d: %s (RSSI: %d dBm)", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+     }
+   }
+   M5Cardputer.Display.println(numNetworks);
+}
 
 void setup() {
-    auto cfg = M5.config();
-    M5Cardputer.begin(cfg, true);
-    M5Cardputer.Display.setRotation(1);
-    M5Cardputer.Display.setTextSize(1.8);
-    M5Cardputer.Display.drawRect(0, 0, M5Cardputer.Display.width(), M5Cardputer.Display.height() - 28, GREEN);
-    //M5Cardputer.Display.setTextFont(&fonts::FreeSerifBoldItalic18pt7b);
-    M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - 4,M5Cardputer.Display.width(), 4, GREEN);
-    M5Cardputer.Display.drawString(data, 4, M5Cardputer.Display.height() - 24);
+  M5.begin();
+  M5Cardputer.Display.setRotation(1); // Set screen rotation if needed
+  displayNetworks();
 }
 
 void loop() {
-    M5Cardputer.update();
-    if (M5Cardputer.Keyboard.isChange()) {
-        if (M5Cardputer.Keyboard.isPressed()) {
-            Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
-
-            for (auto i : status.word) {
-                data += i;
-            }
-
-            if (status.del) {
-                data.remove(data.length() - 1);
-            }
-
-            if (status.enter) {
-                data.remove(0, 2);
-                M5Cardputer.Display.println(data);
-                data = "> ";
-            }
-
-            M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - 28,
-                                         M5Cardputer.Display.width(), 25,
-                                         BLACK);
-
-            M5Cardputer.Display.drawString(data, 4, M5Cardputer.Display.height() - 24);
-        }
+  M5.update();
+  int numNetworks = WiFi.scanNetworks();
+  if (M5.BtnA.wasPressed()) {
+    selectedNetwork = max(0, selectedNetwork - 1);
+    if (selectedNetwork < startIdx) {
+      startIdx = selectedNetwork;
     }
+    displayNetworks();
+  }
+
+  if (M5.BtnA.wasPressed()) {
+    int numNetworks = WiFi.scanNetworks();
+    if (numNetworks > 0) {
+      selectedNetwork = min(selectedNetwork + 1, numNetworks - 1);
+      if (selectedNetwork >= startIdx + MAX_NETWORKS) {
+        startIdx = selectedNetwork - MAX_NETWORKS + 1;
+      }
+      displayNetworks();
+    }
+  }
 }
