@@ -10,16 +10,15 @@
  * @Dependent Library:
  * M5GFX: https://github.com/m5stack/M5GFX
  * M5Unified: https://github.com/m5stack/M5Unified
- * ESP8266Audio: https://github.com/earlephilhower/ESP8266Audio/ 
- */
-
-//#define WIFI_SSID ""
-//#define WIFI_PASS ""
+ * ESP8266Audio: https://github.com/earlephilhower/ESP8266Audio/
+ * M5Cardputer: https://github.com/m5stack/M5Cardputer
+ **/
 
 #include <M5Cardputer.h>
 #include <M5Unified.h>
 #include <HTTPClient.h>
 #include <math.h>
+#include <Preferences.h>
 #include <AudioOutput.h>
 #include <AudioFileSourceICYStream.h>
 #include <AudioFileSource.h>
@@ -27,6 +26,49 @@
 #include <AudioGeneratorMP3.h>
 //#include <AudioGeneratorAAC.h>
 #include <AudioOutputI2S.h>
+
+#define NVS_SSID_KEY "wifi_ssid"
+#define NVS_PASS_KEY "wifi_pass"
+
+String CFG_WIFI_SSID;
+String CFG_WIFI_PASS;
+
+String inputText() {
+    String data = "> ";
+
+    M5Cardputer.Display.setRotation(1);
+    M5Cardputer.Display.setTextScroll(true);
+    M5Cardputer.Display.drawString(data, 4, M5Cardputer.Display.height() - 24);
+
+    while (1) {
+        M5Cardputer.update();
+
+        if (M5Cardputer.Keyboard.isChange()) {
+            if (M5Cardputer.Keyboard.isPressed()) {
+                Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
+
+                for (auto i : status.word) {
+                    data += i;
+                }
+
+                if (status.del) {
+                    data.remove(data.length() - 1);
+                }
+
+                if (status.enter) {
+                    data.remove(0, 2);
+                    M5Cardputer.Display.println(data);
+                    return data;
+                }
+
+                M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - 28, M5Cardputer.Display.width(), 25, BLACK);
+                M5Cardputer.Display.drawString(data, 4, M5Cardputer.Display.height() - 24);
+            }
+        }
+
+        delay(20);
+    }
+}
 
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
@@ -202,7 +244,7 @@ public:
   }
 };
 
-static constexpr const int preallocateBufferSize = 32 * 512;
+static constexpr const int preallocateBufferSize = 128 * 1024;
 static constexpr const int preallocateCodecSize = 85332; // MP3 and AAC+SBR codec max mem needed
 static void* preallocateBuffer = nullptr;
 static void* preallocateCodec = nullptr;
@@ -589,7 +631,7 @@ void setup(void)
   //  cfg.external_speaker.module_rca     = true;
 
   // If you want to play sound from HAT Speaker, write this
-  cfg.external_speaker.hat_spk        = true;
+  cfg.external_speaker.hat_spk = true;
 
   // If you want to play sound from HAT Speaker2, write this
   //cfg.external_speaker.hat_spk2       = true;
@@ -614,62 +656,73 @@ void setup(void)
     M5Cardputer.Speaker.config(spk_cfg);
   }
 
-
   M5Cardputer.Speaker.begin();
   M5Cardputer.Lcd.setRotation(1);
-  M5Cardputer.Lcd.setTextSize(1.3);
-  M5Cardputer.Display.println("Connecting to WiFi");
-  WiFi.disconnect();
-  WiFi.softAPdisconnect(true);
-  WiFi.mode(WIFI_STA);
+  M5Cardputer.Lcd.setTextSize(1.6);
+  M5Cardputer.Lcd.println("WebRadio player");
 
-#if defined ( WIFI_SSID ) &&  defined ( WIFI_PASS )
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-#else
-  WiFi.begin();
-#endif
+    CFG_WIFI_SSID = "";
+    CFG_WIFI_PASS = "";
 
-  // Try forever
- // while (WiFi.status() != WL_CONNECTED) {
- //   M5Cardputer.Display.print(".");
- //   delay(100);
- // }
-  if (WiFi.status() == WL_CONNECTED) {
-  M5Cardputer.Display.println("");
-  M5Cardputer.Display.println("WiFi conectada.");
-  M5Cardputer.Display.println(WiFi.SSID());
-  M5Cardputer.Display.println("Endereço de IP: ");
-  M5Cardputer.Display.println(WiFi.localIP());
-  M5Cardputer.Speaker.tone(1000, 100);
-  delay(2000);
-  } else { //"todo" função para configurar wifi pelo teclado 
-   //Fill in WIFI configuration information through mobile APP to connect
-   //https://www.espressif.com/en/products/software/esp-touch/resources
-    WiFi.mode(WIFI_AP_STA);
-    WiFi.beginSmartConfig();
-    M5Cardputer.Display.println("Baixe o ESP-TOUCH APP");
-    M5Cardputer.Display.println("Waiting for Phone SmartConfig.");  // Screen print format string.
-    while (!WiFi.smartConfigDone()) {  // If the smart network is not completed.
-        delay(500);
+    Preferences preferences;
+    preferences.begin("wifi_settings", false);
+    CFG_WIFI_SSID = preferences.getString(NVS_SSID_KEY, "");
+    CFG_WIFI_PASS = preferences.getString(NVS_PASS_KEY, "");
+    preferences.end();
+
+    WiFi.disconnect();
+    WiFi.softAPdisconnect(true);
+    WiFi.begin(CFG_WIFI_SSID.c_str(), CFG_WIFI_PASS.c_str());
+
+    int tm = 0;
+    while (tm++ < 60 && WiFi.status() != WL_CONNECTED) {
         M5Cardputer.Display.print(".");
+        delay(100);
+      if (M5Cardputer.Keyboard.isKeyPressed('´')) {
+        break;
+      }
     }
-    M5Cardputer.Display.println("\nSmartConfig received.");
-
-    M5Cardputer.Display.println("Waiting for WiFi");
-    while (
-        WiFi.status() !=
-        WL_CONNECTED) { 
-        delay(300);
-        M5Cardputer.Display.print(".");
-    }
+    if (WiFi.status() == WL_CONNECTED) {
     M5Cardputer.Display.clear();
-    M5Cardputer.Display.print("\nWiFi Connect To: ");
-    M5Cardputer.Display.println(WiFi.SSID());
-    M5Cardputer.Display.print("IP address: ");
-    M5Cardputer.Display.println(WiFi.localIP());
-    M5Cardputer.Display.print("RSSI: ");
-    M5Cardputer.Display.println(WiFi.RSSI());
+    M5Cardputer.Display.setCursor(0, 0);
+    M5Cardputer.Display.println("WiFi conectada.");
+    M5Cardputer.Display.println("SSID: " + WiFi.SSID());
+    M5Cardputer.Display.println("IP: " + WiFi.localIP());
+    M5Cardputer.Display.println("Power: " + WiFi.RSSI());
+    M5Cardputer.Speaker.tone(800, 100);
+    delay(200);
+    } else {
+        M5Cardputer.Display.clear();
+        M5Cardputer.Display.drawString("Configuracao de WiFi", 1, 1);
+        M5Cardputer.Display.drawString("Digite o SSID:", 1, 15);
+        CFG_WIFI_SSID = inputText();
+        M5Cardputer.Display.clear();
+        M5Cardputer.Display.drawString("SSID: " + CFG_WIFI_SSID, 1, 15);
+        M5Cardputer.Display.drawString("Digite a senha:", 1, 32);
+        CFG_WIFI_PASS = inputText();
+
+        Preferences preferences;
+        preferences.begin("wifi_settings", false);
+        preferences.putString(NVS_SSID_KEY, CFG_WIFI_SSID);
+        preferences.putString(NVS_PASS_KEY, CFG_WIFI_PASS);
+        preferences.end();
+
+        M5Cardputer.Display.clear();
+        M5Cardputer.Display.drawString("SSID: " + CFG_WIFI_SSID, 1, 15);
+        M5Cardputer.Display.drawString("Senha: " + CFG_WIFI_PASS, 1, 32);
+        M5Cardputer.Display.drawString("SSID e Senha gravados.", 1, 60);
+        WiFi.begin(CFG_WIFI_SSID.c_str(), CFG_WIFI_PASS.c_str());
+
+        M5Cardputer.Display.clear();
+        M5Cardputer.Display.setCursor(1,1);
+        M5Cardputer.Display.drawString("WiFi conectada.", 35,1);
+        M5Cardputer.Display.drawString("SSID: " + WiFi.SSID(), 1,15);
+        M5Cardputer.Display.drawString("IP: " + WiFi.localIP(), 1,32);
+        M5Cardputer.Display.drawString("Power: " + WiFi.RSSI(), 1,60);
+        M5Cardputer.Speaker.tone(6000, 100);
+        delay(2000);
   }
+
   M5Cardputer.Display.clear();
   gfxSetup(&M5Cardputer.Display);
   play(station_index);
