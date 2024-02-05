@@ -662,7 +662,7 @@ void setup(void)
   }
 
 
-  FastLED.addLeds<WS2812, PIN_LED, GRB>(leds, NUM_LEDS);
+  //FastLED.addLeds<WS2812, PIN_LED, GRB>(leds, NUM_LEDS);
   M5Cardputer.Speaker.begin();
   M5Cardputer.Lcd.setRotation(1);
   M5Cardputer.Lcd.setTextSize(1.6);
