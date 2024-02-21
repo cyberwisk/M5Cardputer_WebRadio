@@ -17,62 +17,16 @@
 
 #include <M5Cardputer.h>
 #include <M5Unified.h>
-#include <HTTPClient.h>
-#include <math.h>
 #include <Preferences.h>
+#include "M5CardWifiSetup.h"
+
 #include <AudioOutput.h>
 #include <AudioFileSourceICYStream.h>
 #include <AudioFileSource.h>
 #include <AudioFileSourceBuffer.h>
 #include <AudioGeneratorMP3.h>
-//#include <AudioGeneratorAAC.h>
-#include <AudioOutputI2S.h>
-//#include <FastLED.h>
 
-#define NVS_SSID_KEY "wifi_ssid"
-#define NVS_PASS_KEY "wifi_pass"
-#define PIN_LED    21
-#define NUM_LEDS   1
-
-String CFG_WIFI_SSID;
-String CFG_WIFI_PASS;
-
-String inputText() {
-    String data = "> ";
-
-    M5Cardputer.Display.setRotation(1);
-    M5Cardputer.Display.setTextScroll(true);
-    M5Cardputer.Display.drawString(data, 4, M5Cardputer.Display.height() - 24);
-
-    while (1) {
-        M5Cardputer.update();
-
-        if (M5Cardputer.Keyboard.isChange()) {
-            if (M5Cardputer.Keyboard.isPressed()) {
-                Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
-
-                for (auto i : status.word) {
-                    data += i;
-                }
-
-                if (status.del) {
-                    data.remove(data.length() - 1);
-                }
-
-                if (status.enter) {
-                    data.remove(0, 2);
-                    M5Cardputer.Display.println(data);
-                    return data;
-                }
-
-                M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - 28, M5Cardputer.Display.width(), 25, BLACK);
-                M5Cardputer.Display.drawString(data, 4, M5Cardputer.Display.height() - 24);
-            }
-        }
-
-        delay(20);
-    }
-}
+M5CardWifiSetup wifiSetup;
 
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
@@ -255,7 +209,7 @@ static constexpr const int preallocateCodecSize = 85332; // MP3 and AAC+SBR code
 static void* preallocateBuffer = nullptr;
 static void* preallocateCodec = nullptr;
 static constexpr size_t WAVE_SIZE = 320;
-static AudioOutputM5Speaker out(&M5Cardputer.Speaker, m5spk_virtual_channel);
+static AudioOutputM5Speaker out(&M5Cardputer.Speaker);
 static AudioGenerator *decoder = nullptr;
 static AudioFileSourceICYStream *file = nullptr;
 static AudioFileSourceBuffer *buff = nullptr;
@@ -559,6 +513,7 @@ void gfxLoop(LGFX_Device* gfx)
           gfx->writeFastHLine(x, py, bw - 1, TFT_WHITE);
         }
 
+        /*
         if (wave_enabled)
         {
           for (size_t bi = 0; bi < bw; ++bi)
@@ -606,6 +561,7 @@ void gfxLoop(LGFX_Device* gfx)
             }
           }
         }
+        */
       }
       gfx->display();
       gfx->endWrite();
@@ -629,113 +585,30 @@ void gfxLoop(LGFX_Device* gfx)
 void setup(void)
 {
   auto cfg = M5.config();
-
-  // If you want to play sound from ModuleDisplay, write this
-  //  cfg.external_speaker.module_display = true;
-
-  // If you want to play sound from ModuleRCA, write this
-  //  cfg.external_speaker.module_rca     = true;
-
-  // If you want to play sound from HAT Speaker, write this
   cfg.external_speaker.hat_spk = true;
-
-  // If you want to play sound from HAT Speaker2, write this
-  //cfg.external_speaker.hat_spk2       = true;
-
-  // If you want to play sound from ATOMIC Speaker, write this
-  //cfg.external_speaker.atomic_spk     = true;
-
   M5Cardputer.begin(cfg);
 
   preallocateBuffer = malloc(preallocateBufferSize);
   preallocateCodec = malloc(preallocateCodecSize);
-  if (!preallocateBuffer || !preallocateCodec) {
-    M5Cardputer.Display.printf("FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize + preallocateCodecSize);
-    for (;;) { delay(1000); }
-  }
 
   { /// custom setting
     auto spk_cfg = M5Cardputer.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
-    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
+    spk_cfg.sample_rate = 128000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
     spk_cfg.task_pinned_core = APP_CPU_NUM;
     M5Cardputer.Speaker.config(spk_cfg);
   }
 
-
-  //FastLED.addLeds<WS2812, PIN_LED, GRB>(leds, NUM_LEDS);
   M5Cardputer.Speaker.begin();
   M5Cardputer.Lcd.setRotation(1);
   M5Cardputer.Lcd.setTextSize(1.6);
-  M5Cardputer.Lcd.println("WebRadio player");
-
-    CFG_WIFI_SSID = "";
-    CFG_WIFI_PASS = "";
-
-    Preferences preferences;
-    preferences.begin("wifi_settings", false);
-    CFG_WIFI_SSID = preferences.getString(NVS_SSID_KEY, "");
-    CFG_WIFI_PASS = preferences.getString(NVS_PASS_KEY, "");
-    preferences.end();
-
-    WiFi.disconnect();
-    WiFi.softAPdisconnect(true);
-    WiFi.begin(CFG_WIFI_SSID.c_str(), CFG_WIFI_PASS.c_str());
-
-    int tm = 0;
-    while (tm++ < 60 && WiFi.status() != WL_CONNECTED) {
-        M5Cardputer.Display.print(".");
-        delay(100);
-      if (M5Cardputer.Keyboard.isKeyPressed('´')) {
-        break;
-      }
-    }
-    if (WiFi.status() == WL_CONNECTED) {
-    M5Cardputer.Display.clear();
-    M5Cardputer.Display.setCursor(0, 0);
-    M5Cardputer.Display.println("WiFi conectada.");
-    M5Cardputer.Display.println("SSID: " + WiFi.SSID());
-    M5Cardputer.Display.println("IP: " + WiFi.localIP());
-    M5Cardputer.Display.println("Power: " + WiFi.RSSI());
-    M5Cardputer.Speaker.tone(800, 100);
-    delay(200);
-    } else {
-        M5Cardputer.Display.clear();
-        M5Cardputer.Display.drawString("Configuracao de WiFi", 1, 1);
-        M5Cardputer.Display.drawString("Digite o SSID:", 1, 15);
-        CFG_WIFI_SSID = inputText();
-        M5Cardputer.Display.clear();
-        M5Cardputer.Display.drawString("SSID: " + CFG_WIFI_SSID, 1, 15);
-        M5Cardputer.Display.drawString("Digite a senha:", 1, 32);
-        CFG_WIFI_PASS = inputText();
-
-        Preferences preferences;
-        preferences.begin("wifi_settings", false);
-        preferences.putString(NVS_SSID_KEY, CFG_WIFI_SSID);
-        preferences.putString(NVS_PASS_KEY, CFG_WIFI_PASS);
-        preferences.end();
-
-        M5Cardputer.Display.clear();
-        M5Cardputer.Display.drawString("SSID: " + CFG_WIFI_SSID, 1, 15);
-        M5Cardputer.Display.drawString("Senha: " + CFG_WIFI_PASS, 1, 32);
-        M5Cardputer.Display.drawString("SSID e Senha gravados.", 1, 60);
-        WiFi.begin(CFG_WIFI_SSID.c_str(), CFG_WIFI_PASS.c_str());
-
-        M5Cardputer.Display.clear();
-        M5Cardputer.Display.setCursor(1,1);
-        M5Cardputer.Display.drawString("WiFi conectada.", 35,1);
-        M5Cardputer.Display.drawString("SSID: " + WiFi.SSID(), 1,15);
-        M5Cardputer.Display.drawString("IP: " + WiFi.localIP(), 1,32);
-        M5Cardputer.Display.drawString("Power: " + WiFi.RSSI(), 1,60);
-        M5Cardputer.Speaker.tone(6000, 100);
-        delay(2000);
-  }
+  
+  wifiSetup.connectToWiFi();
 
   M5Cardputer.Display.clear();
   gfxSetup(&M5Cardputer.Display);
   play(station_index);
   xTaskCreatePinnedToCore(decodeTask, "decodeTask", 4096, nullptr, 1, nullptr, PRO_CPU_NUM);
-  M5Cardputer.Lcd.setTextSize(1);
 }
 
 void loop(void)
