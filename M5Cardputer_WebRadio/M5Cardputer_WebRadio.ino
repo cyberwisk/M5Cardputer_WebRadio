@@ -26,6 +26,9 @@
 #include <AudioFileSourceBuffer.h>
 #include <AudioGeneratorMP3.h>
 
+#define PIN_LED    21
+#define NUM_LEDS   1
+
 M5CardWifiSetup wifiSetup;
 
 /// set M5Speaker virtual channel (0-7)
@@ -33,6 +36,7 @@ static constexpr uint8_t m5spk_virtual_channel = 0;
 
 /// set web radio station url
 static constexpr const char* station_list[][2] =
+{
   {"MundoLivre FM"      , "https://up-rcr.webnow.com.br/mundolivre.mp3"},
   //{"Morcegao FM"      , "https://radio.morcegaofm.com.br/morcegao128"},
   //{"Radio O Porao"    , "http://server03.stmsg.com.br:6678/stream"},
@@ -209,7 +213,7 @@ static constexpr const int preallocateCodecSize = 85332; // MP3 and AAC+SBR code
 static void* preallocateBuffer = nullptr;
 static void* preallocateCodec = nullptr;
 static constexpr size_t WAVE_SIZE = 320;
-static AudioOutputM5Speaker out(&M5Cardputer.Speaker);
+static AudioOutputM5Speaker out(&M5Cardputer.Speaker, m5spk_virtual_channel);
 static AudioGenerator *decoder = nullptr;
 static AudioFileSourceICYStream *file = nullptr;
 static AudioFileSourceBuffer *buff = nullptr;
@@ -513,7 +517,6 @@ void gfxLoop(LGFX_Device* gfx)
           gfx->writeFastHLine(x, py, bw - 1, TFT_WHITE);
         }
 
-        /*
         if (wave_enabled)
         {
           for (size_t bi = 0; bi < bw; ++bi)
@@ -561,7 +564,6 @@ void gfxLoop(LGFX_Device* gfx)
             }
           }
         }
-        */
       }
       gfx->display();
       gfx->endWrite();
@@ -601,14 +603,15 @@ void setup(void)
 
   M5Cardputer.Speaker.begin();
   M5Cardputer.Lcd.setRotation(1);
-  M5Cardputer.Lcd.setTextSize(1.6);
+  M5Cardputer.Lcd.setTextSize(1);
   
   wifiSetup.connectToWiFi();
 
   M5Cardputer.Display.clear();
   gfxSetup(&M5Cardputer.Display);
   play(station_index);
-  xTaskCreatePinnedToCore(decodeTask, "decodeTask", 4096, nullptr, 1, nullptr, PRO_CPU_NUM);
+  //xTaskCreatePinnedToCore(decodeTask, "decodeTask", 4096, nullptr, 1, nullptr, PRO_CPU_NUM);
+  xTaskCreatePinnedToCore(decodeTask, "decodeTask", 8096, nullptr, 1, nullptr, PRO_CPU_NUM);
 }
 
 void loop(void)
