@@ -33,9 +33,9 @@ static constexpr uint8_t m5spk_virtual_channel = 0;
 
 /// set web radio station url
 static constexpr const char* station_list[][2] =
-{
   {"MundoLivre FM"      , "https://up-rcr.webnow.com.br/mundolivre.mp3"},
-  //{"Morcegao FM"        , "https://radio.morcegaofm.com.br/morcegao128"},
+  //{"Morcegao FM"      , "https://radio.morcegaofm.com.br/morcegao128"},
+  //{"Radio O Porao"    , "http://server03.stmsg.com.br:6678/stream"},
   {"Radio Mundo do Rock", "https://servidor34.brlogic.com:8014/live"},
   {"u80s"               , "http://ice6.somafm.com/u80s-128-mp3"},
   {"Awesome80s"         , "http://listen.livestreamingservice.com/181-awesome80s_128k.mp3"},
