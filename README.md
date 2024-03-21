@@ -23,4 +23,5 @@ Assim que ligar o dispositivo, ele vai pedir as configurações de SSID e Senha 
 ---------------
 * Configurações necessárias do StampS3 na IDE do arduino:
   
-![image](https://github.com/cyberwisk/M5Cardputer_WebRadio/assets/3136312/d7e1c7b9-ae27-4399-87f9-be3f5cff2723)
+![image](https://github.com/cyberwisk/M5Cardputer_WebRadio/assets/3136312/2375b33f-d776-4845-a629-5c7429b8813e)
+
