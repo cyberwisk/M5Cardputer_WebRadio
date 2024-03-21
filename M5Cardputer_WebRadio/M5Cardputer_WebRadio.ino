@@ -2,7 +2,7 @@
  * @file M5Cardputer_WebRadio.ino
  * @author Aurélio Avanzi
  * @brief https://github.com/cyberwisk/M5Cardputer_WebRadio
- * @version 0.1
+ * @version Beta 1.1
  * @date 2023-12-12
  *
  * @Hardwares: M5Cardputer
@@ -18,7 +18,7 @@
 #include <M5Cardputer.h>
 #include <M5Unified.h>
 #include <Preferences.h>
-#include "M5CardWifiSetup.h"
+#include "CardWifiSetup.h"
 
 #include <AudioOutput.h>
 #include <AudioFileSourceICYStream.h>
@@ -29,7 +29,8 @@
 #define PIN_LED    21
 #define NUM_LEDS   1
 
-M5CardWifiSetup wifiSetup;
+int PreviousStation = 0;
+int previousVolume = 0;
 
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
@@ -320,6 +321,7 @@ static void gfxSetup(LGFX_Device* gfx)
   //  gfx->setRotation(gfx->getRotation()^1);
   //}
   gfx->setFont(&fonts::lgfxJapanGothic_12);
+  //gfx->setTextFont(&fonts::FreeMonoOblique18pt7b);
   gfx->setEpdMode(epd_mode_t::epd_fastest);
   gfx->setTextWrap(false);
   gfx->setCursor(0, 8);
@@ -367,7 +369,7 @@ void gfxLoop(LGFX_Device* gfx)
         gfx->setCursor(4, 8 + y);
         gfx->fillRect(0, 8 + y, gfx->width(), 12, gfx->getBaseColor());
         gfx->print(meta_text[id]);
-        gfx->print(" "); // Garbage data removal when UTF8 characters are broken in the middle.
+        gfx->print(" ");
       }
       gfx->display();
       gfx->endWrite();
@@ -602,15 +604,24 @@ void setup(void)
   }
 
   M5Cardputer.Speaker.begin();
-  M5Cardputer.Lcd.setRotation(1);
-  M5Cardputer.Lcd.setTextSize(1);
+  M5Cardputer.Display.setRotation(1);
+  M5Cardputer.Display.setTextColor(GREEN, BLACK);
+  //M5Cardputer.Display.setTextFont(&fonts::FreeMono12pt7b);
+  M5Cardputer.Display.setTextFont(&fonts::FreeMonoOblique9pt7b);    
   
-  wifiSetup.connectToWiFi();
+  connectToWiFi();
 
+  M5Cardputer.Lcd.setTextSize(1);
   M5Cardputer.Display.clear();
   gfxSetup(&M5Cardputer.Display);
+
+  preferences.begin("M5_settings", false);
+  previousVolume = preferences.getInt("PreviousVolume", 50);
+  station_index = preferences.getInt("PreviousStation", 1);
+  preferences.end();
+  
   play(station_index);
-  //xTaskCreatePinnedToCore(decodeTask, "decodeTask", 4096, nullptr, 1, nullptr, PRO_CPU_NUM);
+    //xTaskCreatePinnedToCore(decodeTask, "decodeTask", 4096, nullptr, 1, nullptr, PRO_CPU_NUM);
   xTaskCreatePinnedToCore(decodeTask, "decodeTask", 8096, nullptr, 1, nullptr, PRO_CPU_NUM);
 }
 
@@ -639,32 +650,42 @@ void loop(void)
           M5Cardputer.Speaker.tone(1000, 100);
           if (++station_index >= stations) { station_index = 0; }
             play(station_index);
-        }
-        if (M5Cardputer.Keyboard.isKeyPressed(',')) {
+          }
+          if (M5Cardputer.Keyboard.isKeyPressed(',')) {
           delay(200);
           M5Cardputer.Speaker.tone(800, 100);     
-          if (--station_index >= stations) { station_index = 0; }
-            play(station_index);
-        }
-        if (M5Cardputer.Keyboard.isKeyPressed(';')) {
+          //if (--station_index >= stations) { station_index = 0; }
+
+          if (station_index <= 0) { station_index = stations - 1; } else { station_index--; }
+           play(station_index);
+          }
+          if (M5Cardputer.Keyboard.isKeyPressed(';')) {
            if (v <= 255){
             v+= 10;
             M5Cardputer.Speaker.setVolume(v);
+            previousVolume = M5Cardputer.Speaker.getVolume();
             }
-        }
-        if (M5Cardputer.Keyboard.isKeyPressed('.')) {
+          }
+          if (M5Cardputer.Keyboard.isKeyPressed('.')) {
            if (v >= 0){
             v-= 10;
             M5Cardputer.Speaker.setVolume(v);
+            previousVolume = M5Cardputer.Speaker.getVolume();
             }
+          }
+          if (M5Cardputer.Keyboard.isKeyPressed('m')) {
+           if (M5Cardputer.Speaker.getVolume() > 0) {
+             previousVolume = M5Cardputer.Speaker.getVolume();
+             M5Cardputer.Speaker.setVolume(0);
+           } else {
+             M5Cardputer.Speaker.setVolume(previousVolume);
+           }
         }
-        if (M5Cardputer.Keyboard.isKeyPressed('m')) {
-           if (v >= 0){
-            v= 0;
-            M5Cardputer.Speaker.setVolume(v);
-            }
-        }
-    }
+          preferences.begin("M5_settings", false);
+          preferences.putInt("PreviousVolume", previousVolume);
+          preferences.putInt("PreviousStation", station_index);
+          preferences.end();
+       }
   
   if (M5Cardputer.BtnA.wasPressed())
   {
