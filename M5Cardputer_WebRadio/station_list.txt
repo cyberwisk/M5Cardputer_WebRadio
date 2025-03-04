@@ -1,3 +1,13 @@
+Radio O Porao,http://server03.stmsg.com.br:6678/stream
+Morcegao FM 64,http://radio.morcegaofm.com.br/morcegao32
 MundoLivre FM,https://up-rcr.webnow.com.br/mundolivre.mp3
+GTA Classics,https://gta-classics.stream.laut.fm/gta-classics
 Radio Mundo do Rock,https://servidor34.brlogic.com:8014/live
 u80s,http://ice6.somafm.com/u80s-128-mp3
+Metal Detector,http://ice4.somafm.com/metal-128-mp3
+181-beatles_128k,http://listen.181fm.com/181-beatles_128k.mp3
+89Rock,https://21933.live.streamtheworld.com/RADIO_89FM_ADP.aac
+Morcegao FM,http://radio.morcegaofm.com.br/morcegao128
+Morcegao FM Auto,http://radio.morcegaofm.com.br/auto
+FEMA FM Assis,https://0pzsvasns6.zoeweb.tv/z497-live/stream/playlist.m3u
+MP3 Local,/mp3/mp3_PlayList.m3u
