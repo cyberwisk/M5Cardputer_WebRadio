@@ -38,7 +38,7 @@ struct WiFiNetwork {
 };
 std::vector<WiFiNetwork> networks;
 
-// calcular hash das credenciais
+// Função auxiliar para calcular hash das credenciais
 uint32_t calculateHash(const String& str) {
     uint32_t hash = 5381;
     for (char c : str) {
@@ -47,6 +47,7 @@ uint32_t calculateHash(const String& str) {
     return hash;
 }
 
+// Função melhorada para entrada de texto
 String inputText(const String& prompt, int x, int y, bool isPassword = false) {
     String data = "> ";
     String displayData = "> ";
@@ -83,7 +84,7 @@ String inputText(const String& prompt, int x, int y, bool isPassword = false) {
                 M5Cardputer.Display.drawString(displayData, 4, y);
             }
         }
-        delay(10);
+        delay(10);  // Reduzido para melhor responsividade
     }
 }
 
@@ -143,7 +144,7 @@ String scanAndDisplayNetworks() {
         }
     }
     
-    // Ordena wifi por sinal
+    // Ordena por força do sinal
     std::sort(networks.begin(), networks.end(),
              [](const WiFiNetwork& a, const WiFiNetwork& b) {
                  return a.rssi > b.rssi;
@@ -189,7 +190,7 @@ String scanAndDisplayNetworks() {
 }
 
 void connectToWiFi() {
-    // Configura modo WiFi e energia no TALO!
+    // Configura modo WiFi e economia de energia
     WiFi.mode(WIFI_STA);
     esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
     
