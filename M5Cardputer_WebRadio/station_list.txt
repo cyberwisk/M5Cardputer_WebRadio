@@ -1,5 +1,6 @@
 Radio Porao,https://server03.stmsg.com.br:6678/stream
 Morcegao FM,https://radio.morcegaofm.com.br/morcegao32
+Radio UP!(64k),http://saber.intra.antbr.com:8010/retro
 MundoLivre FM,https://up-rcr.webnow.com.br/mundolivre.mp3
 GTA Classics,https://gta-classics.stream.laut.fm/gta-classics
 u80s,https://ice6.somafm.com/u80s-128-mp3
@@ -8,4 +9,5 @@ Metal Detector,https://ice4.somafm.com/metal-128-mp3
 89Rock,https://21933.live.streamtheworld.com/RADIO_89FM_ADP.aac
 Morcegao FM,https://radio.morcegaofm.com.br/morcegao128
 Morcegao FM Auto,https://radio.morcegaofm.com.br/auto
+Radio UP!(256k),http://saber.intra.antbr.com:8010/radio
 Los Santos Rock,/mp3/Los Santos Rock Radio.mp3
